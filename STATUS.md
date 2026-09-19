@@ -22,6 +22,8 @@ Live status board. Refresh before significant commits (see `AGENTS.md` → Statu
 | Architecture diagrams | active — [[docs/architecture/overview]] |
 | TUI ↔ web feature parity | active — [[docs/roadmap/02-feature-parity]] |
 | M1: mask `models.yml` inline keys | planned — [[docs/roadmap/01-security-reliability]] |
+| Agent Hub — read-only roster + inspector (P4 phase 1) | done (2026-09-19) — [[docs/work-items/2026-09-19-agent-hub-phase1]] |
+| Agent Hub — control (chat/kill/revive) + focus (P4 phases 2–3) | planned — bridge extension, [[docs/specs/2026-09-19-agent-hub-scope-and-view-study]] |
 
 ## Quality baseline (2026-09-18, `330db7d` + bootstrap)
 
@@ -31,14 +33,19 @@ Live status board. Refresh before significant commits (see `AGENTS.md` → Statu
 
 ## Recent batches
 
+- 2026-09-19: Agent Hub phase 1 — read-only roster + inspector + spawn-tree
+  toggle, advisor rows, hub study & feasibility spec (bridge extension
+  verified). [[docs/work-items/2026-09-19-agent-hub-phase1]]
 - 2026-09-18: fork bootstrap — governance, security review, roadmap wiki,
   architecture docs, macOS test fix. [[docs/work-items/2026-09-18-bootstrap]]
 
 ## Next work
 
-1. S1 — mask inline `models.yml` keys in `/api/models-config` round-trip
-2. P-series — first parity items from [[docs/roadmap/02-feature-parity]]
-3. A-series — keep [[docs/architecture/api-surface]] current as routes change
+1. P4 phase 2 — hub control via the bundled bridge extension (`-e`),
+   capability-gated route + UI. [[docs/specs/2026-09-19-agent-hub-scope-and-view-study]]
+2. S1 — mask inline `models.yml` keys in `/api/models-config` round-trip
+3. P-series — remaining parity items from [[docs/roadmap/02-feature-parity]]
+4. A-series — keep [[docs/architecture/api-surface]] current as routes change
 
 ## Known limitations
 

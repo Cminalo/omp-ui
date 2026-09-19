@@ -14,6 +14,10 @@ All notable changes to **omp-web** (`@kahme247/ompweb`) are documented in this f
 - **Roadmap wiki:** `docs/roadmap/index.md` MOC + pillars for security & reliability, TUI feature parity, and architecture visibility.
 - **Fixed:** tray `--status` test asserted `isWindows === true` on every non-Linux platform — red on macOS (CI only covers ubuntu+windows). Now platform-aware.
 
+### Agent Hub — read-only hub view (2026-09-19)
+
+- **Agent Hub** (P4, phase 1): a TUI-parity hub for the session's subagents, opened from the composer **Subagents** panel header. Dense roster with live activity lines and per-row cost · tokens · age, an aggregate header (running/total plus measured-only cost/token/time sums — never estimated), a **flat ↔ spawn-tree** toggle grouped by spawning `task` call, and a per-agent inspector: current tool + arguments, last intent, retry state, context gauge, model (role, resolved, fallback), telemetry, and output/patch/worktree artifacts. Works with and without a live agent — finished runs come from on-disk history. Advisor transcripts (`__advisor*.jsonl`) appear as read-only rows. Control (chat/kill/revive) and focus mode follow in later phases via the bridge extension; see `docs/specs/2026-09-19-agent-hub-scope-and-view-study.md` and `docs/work-items/2026-09-19-agent-hub-phase1.md`.
+
 ### Added
 
 - Add **Copy** and **Copy as Markdown** below user messages and completed assistant replies, with keyboard access and touch-sized controls. Copy only message text, excluding thinking, tool output, and renderer controls; preserve full source for oversized raw-text messages.

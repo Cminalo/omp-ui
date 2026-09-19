@@ -100,7 +100,8 @@ Sources: TUI = `omp://cli-reference.md`, `omp://slash-command-internals.md`,
 | `task` subagent spawning | ✅ | rendered in transcript |
 | Live subagent roster + progress | ✅ | composer panel, chips, telemetry |
 | Subagent transcripts | ✅ | RPC paging + disk fallback |
-| Agent Hub (chat/kill/revive) | ❌ | web is read-only on subagents |
+| Agent Hub — roster, inspector, tree (read) | 🟡 | hub view shipped 2026-09-19 — [[docs/work-items/2026-09-19-agent-hub-phase1]]; registry-only fields (`parked`/`idle`, parent lineage, unread IRC) are not on the RPC wire and arrive with the bridge |
+| Agent Hub control (chat/kill/revive) | ❌ | no RPC command in omp 18.2.5 (binary-verified); bridge-extension path spike-verified — [[docs/specs/2026-09-19-agent-hub-scope-and-view-study]] |
 | Agent definitions CRUD | ✅ | Agents settings tab, `.md` frontmatter editor |
 | Advisor (`--advisor`) | ✅ | spawn flag + settings |
 | `omp ps` supervised processes | ❌ | |
@@ -187,7 +188,8 @@ Sources: TUI = `omp://cli-reference.md`, `omp://slash-command-internals.md`,
 1. **Collaboration** (`/collab`, `/share`, `/join`) — entirely absent. Highest-leverage gap; OMP already ships an encrypted relay + `collab-web` client. → **P1**
 2. **Rewind / checkpoint / undo-edit** — no recovery surface in the web UI. → **P2**
 3. **Plan mode is emulated, not native** — no read-only gate, no approval/edit/reject flow. → **P3**
-4. **Agent Hub control** (chat/kill/revive subagents) — read-only today.
+4. **Agent Hub control** (chat/kill/revive subagents) — read-only hub view
+   shipped 2026-09-19; control awaits the bridge extension (P4 phase 2).
 5. **Memory browser**, **context-file editor**, **TTSR**, **LSP/DAP UIs** — no surface.
 6. **Marketplace source management**, **extension/hook picker**, **foreign session import**.
 7. **Git staging/commit UI** — read-only diff/status today.

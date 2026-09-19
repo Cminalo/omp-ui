@@ -8,7 +8,7 @@
 // page reload without the live RPC registry (get_subagent_messages is
 // registry-gated and rejects unknown session files).
 
-import { closeSync, existsSync, openSync, readSync, realpathSync, statSync } from "fs";
+import { closeSync, existsSync, openSync, readdirSync, readSync, realpathSync, statSync } from "fs";
 import { basename, dirname, join } from "path";
 import { getSessionEntries, entryToUiMessage } from "./session-reader";
 import { parseJsonlLenient } from "./omp/session-files";
@@ -275,6 +275,32 @@ export function extractSubagentHistory(sessionFilePath: string): SubagentHistory
   }
   // Resolve sibling transcript files and detached markers.
   const dir = siblingDirForSession(sessionFilePath);
+
+  // Advisor transcripts (`__advisor*.jsonl`) sit in the same artifacts dir and
+  // name no task toolResult, so the walk above never sees them. The TUI hub
+  // lists them as read-only `advisor` rows — observability records that can be
+  // opened but never messaged/revived/killed — and the web enforces the same
+  // restriction (kind flows to the UI and to any future control gate). They
+  // sort after every task-spawned agent.
+  try {
+    for (const name of readdirSync(dir)) {
+      if (!name.startsWith("__advisor") || !name.endsWith(".jsonl")) continue;
+      const id = name.slice(0, -".jsonl".length);
+      if (!SUBAGENT_ID_RE.test(id) || byId.has(id)) continue;
+      batchSeqById.set(id, Number.MAX_SAFE_INTEGER);
+      byId.set(id, {
+        id,
+        agent: "advisor",
+        kind: "advisor",
+        status: "completed",
+        index: Number.MAX_SAFE_INTEGER,
+        sessionFile: join(dir, name),
+        transcriptAvailable: true,
+      });
+    }
+  } catch {
+    // No artifacts directory (session never spawned anything) — no advisors.
+  }
   const roster = [...byId.values()];
   for (const entry of roster) {
     // The client cannot derive this: neither a live snapshot nor a partial

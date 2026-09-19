@@ -11,6 +11,7 @@ import { MessageView } from "./MessageView";
 import { ChatInput, type ChatInputHandle } from "./ChatInput";
 import { ExtensionDialog } from "./ExtensionDialog";
 import { SubagentTranscriptDialog } from "./SubagentTranscriptDialog";
+import { AgentHubDialog } from "./AgentHubDialog";
 import { ChatMinimap, useMessageRefs } from "./ChatMinimap";
 import { ComposerPanels } from "./ComposerPanels";
 import OmpWebLogo from "./OmpWebLogo";
@@ -694,6 +695,8 @@ export function ChatWindow({ session, newSessionCwd, newSessionWorkspace, toolCa
     }
   }, [sessionKeyForPaging]);
   const [selectedSubagent, setSelectedSubagent] = useState<SubagentInfo | null>(null);
+  // Agent Hub (roster + inspector) — opened from the composer Subagents panel.
+  const [agentHubOpen, setAgentHubOpen] = useState(false);
   const [composerMinimized, setComposerMinimized] = useState(false);
   const minimizedExpandRef = useRef<HTMLButtonElement | null>(null);
   // True while the viewport is at/near the conversation bottom. Drives the
@@ -1127,6 +1130,13 @@ export function ChatWindow({ session, newSessionCwd, newSessionWorkspace, toolCa
         onClose={() => setSelectedSubagent(null)}
       />
 
+      <AgentHubDialog
+        open={agentHubOpen}
+        subagents={subagents}
+        onClose={() => setAgentHubOpen(false)}
+        onOpenTranscript={setSelectedSubagent}
+      />
+
       {extensionCustomUi && (
         <ExtensionCustomPanel
           request={extensionCustomUi}
@@ -1364,6 +1374,7 @@ export function ChatWindow({ session, newSessionCwd, newSessionWorkspace, toolCa
               todoPhases={todoPhases}
               subagents={subagents}
               onSelectSubagent={setSelectedSubagent}
+              onOpenHub={() => setAgentHubOpen(true)}
             />
             <ExtensionWidgets widgets={belowEditorWidgets} />
           </div>

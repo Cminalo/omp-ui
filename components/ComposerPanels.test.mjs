@@ -17,6 +17,7 @@ test("renders nothing when there are no tasks or subagents", () => {
     todoPhases: [],
     subagents: [],
     onSelectSubagent: noop,
+    onOpenHub: noop,
   })), "");
 });
 
@@ -28,6 +29,7 @@ test("attaches todo plan and subagent roster with live states", () => {
       { id: "s2", agent: "worker", status: "completed", task: "Write the code", index: 1 },
     ],
     onSelectSubagent: noop,
+    onOpenHub: noop,
     defaultExpanded: true,
   }));
 
@@ -46,6 +48,7 @@ test("panels start collapsed with live summary in their headers", () => {
     todoPhases: [{ name: "Implementation", tasks: [{ content: "Wire panels", status: "in_progress" }] }],
     subagents: [{ id: "s1", agent: "scout", status: "started", task: "Map the surface", index: 0 }],
     onSelectSubagent: noop,
+    onOpenHub: noop,
   }));
   // Headers (with live counts) are visible...
   assert.match(html, /Tasks/);
@@ -80,6 +83,7 @@ test("live chips show current tool, telemetry, and async marker", () => {
       },
     }],
     onSelectSubagent: noop,
+    onOpenHub: noop,
     defaultExpanded: true,
   }));
 
@@ -105,6 +109,7 @@ test("retrying chips surface retry state instead of the activity line", () => {
       progress: { retryState: { attempt: 2, maxAttempts: 5, delayMs: 1000, errorMessage: "429", startedAtMs: 1 } },
     }],
     onSelectSubagent: noop,
+    onOpenHub: noop,
     defaultExpanded: true,
   }));
   assert.match(html, /data-subagent-metric="retrying 2\/5"/);
@@ -116,6 +121,7 @@ test("coexists with composer layout and keeps todo progress summary accessible",
     todoPhases: [{ name: "Implementation", tasks: [{ content: "Checklist item 1", status: "pending" }, { content: "Checklist item 2", status: "completed" }] }],
     subagents: [],
     onSelectSubagent: noop,
+    onOpenHub: noop,
   }));
   assert.match(html, /Tasks/);
   assert.match(html, /1\/2 complete/);
@@ -134,6 +140,7 @@ test("history chips render terminal telemetry without pulsing state", () => {
       progress: { status: "completed", tokens: 999000, cost: 1.23, durationMs: 360000, resolvedModel: "provider/gpt-5.6:medium" },
     }],
     onSelectSubagent: noop,
+    onOpenHub: noop,
     defaultExpanded: true,
   }));
   assert.match(html, /Map the surface/);
@@ -160,6 +167,7 @@ test("chips show agent source, nested count, and async marker", () => {
       },
     }],
     onSelectSubagent: noop,
+    onOpenHub: noop,
     defaultExpanded: true,
   }));
   assert.match(html, /Inspect foo\.ts/);
@@ -181,6 +189,7 @@ test("history chips mark detached async spawns", () => {
       detached: true,
     }],
     onSelectSubagent: noop,
+    onOpenHub: noop,
     defaultExpanded: true,
   }));
   assert.match(html, /⤴/);
@@ -199,9 +208,23 @@ test("zero context tokens never print a null gauge", () => {
       progress: { currentTool: "read", contextTokens: 0, contextWindow: 32000 },
     }],
     onSelectSubagent: noop,
+    onOpenHub: noop,
     defaultExpanded: true,
   }));
   assert.doesNotMatch(html, /null/);
   assert.match(html, /read/);
+});
+
+test("subagents header carries the open-hub affordance even when collapsed", () => {
+  const html = renderToStaticMarkup(React.createElement(ComposerPanels, {
+    todoPhases: [],
+    subagents: [{ id: "s1", agent: "scout", status: "started", task: "Map the surface", index: 0 }],
+    onSelectSubagent: noop,
+    onOpenHub: noop,
+  }));
+  // The panel starts collapsed (no chip content)…
+  assert.doesNotMatch(html, /Map the surface/);
+  // …but the hub stays reachable from the header.
+  assert.match(html, /aria-label="Open agent hub"/);
 });
 

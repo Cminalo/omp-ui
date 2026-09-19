@@ -115,6 +115,9 @@ export function historyEntryToSubagentInfo(entry: SubagentHistoryEntry): Subagen
     source: "history",
     detached: entry.detached,
     result: entry.result,
+    // Only set when present: spreading an explicit `kind: undefined` over a
+    // merged live entry would erase a previously parsed kind.
+    ...(entry.kind !== undefined ? { kind: entry.kind } : {}),
   };
   const progress: SubagentProgress = {
     status: entry.status === "started" ? "running" : entry.status,

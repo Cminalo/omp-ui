@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import {
   Activity, Bot, Check, ChevronDown, Copy,
-  CircleDollarSign, Clock3, Cpu, Gauge, GitBranch, Network, RefreshCw,
+  CircleDollarSign, Clock3, Cpu, Gauge, GitBranch, LayoutGrid, Network, RefreshCw,
   UserRound, Wrench, type LucideIcon,
 } from "lucide-react";
 import { useI18n } from "@/lib/i18n";
@@ -146,9 +146,11 @@ function SubagentActivityLine({ subagent }: { subagent: SubagentInfo }) {
   );
 }
 
-function SubagentsPanel({ subagents, onSelectSubagent, defaultExpanded = false }: {
+function SubagentsPanel({ subagents, onSelectSubagent, onOpenHub, defaultExpanded = false }: {
   subagents: SubagentInfo[];
   onSelectSubagent: (subagent: SubagentInfo) => void;
+  /** Opens the full Agent Hub (roster + inspector). */
+  onOpenHub: () => void;
   /** Initial expansion (default: collapsed — the header still shows the live summary). */
   defaultExpanded?: boolean;
 }) {
@@ -164,33 +166,45 @@ function SubagentsPanel({ subagents, onSelectSubagent, defaultExpanded = false }
       className="overflow-hidden border border-border bg-bg-subtle"
       style={{ borderRadius: "var(--radius-card)" }}
     >
-      <button
-        type="button"
-        onClick={() => setCollapsed((value) => { saveCollapsed(SUBAGENTS_COLLAPSED_STORAGE_KEY, !value); return !value; })}
-        title={collapsed ? t("chatWindow.expandPanel") : t("chatWindow.collapsePanel")}
-        className={`ui-focus-ring flex w-full cursor-pointer items-center gap-2 px-3 py-2 text-left text-xs text-text-muted ${collapsed ? "" : "border-b border-border"}`}
-        style={{ background: "none" }}
-      >
-        <Network size={14} strokeWidth={1.8} aria-hidden />
-        <strong className="font-medium text-text">{t("chatWindow.subagentsPanel")}</strong>
-        <span
-          className="ml-auto inline-flex items-center gap-1.5"
-          aria-label={t("chatWindow.subagentSummary", { running: runningCount, total: subagents.length })}
-          title={t("chatWindow.subagentSummary", { running: runningCount, total: subagents.length })}
+      <div className={`flex items-center ${collapsed ? "" : "border-b border-border"}`}>
+        <button
+          type="button"
+          onClick={() => setCollapsed((value) => { saveCollapsed(SUBAGENTS_COLLAPSED_STORAGE_KEY, !value); return !value; })}
+          title={collapsed ? t("chatWindow.expandPanel") : t("chatWindow.collapsePanel")}
+          className="ui-focus-ring flex flex-1 cursor-pointer items-center gap-2 px-3 py-2 text-left text-xs text-text-muted"
+          style={{ background: "none", minWidth: 0 }}
         >
-          <span>{runningCount}/{subagents.length}</span>
-        </span>
-        <ChevronDown
-          size={14}
-          strokeWidth={1.8}
-          aria-hidden
-          style={{
-            color: "var(--text-dim)",
-            transform: collapsed ? "rotate(-90deg)" : "rotate(0deg)",
-            transition: "transform var(--dur-med) var(--ease-out-warm)",
-          }}
-        />
-      </button>
+          <Network size={14} strokeWidth={1.8} aria-hidden />
+          <strong className="font-medium text-text">{t("chatWindow.subagentsPanel")}</strong>
+          <span
+            className="ml-auto inline-flex items-center gap-1.5"
+            aria-label={t("chatWindow.subagentSummary", { running: runningCount, total: subagents.length })}
+            title={t("chatWindow.subagentSummary", { running: runningCount, total: subagents.length })}
+          >
+            <span>{runningCount}/{subagents.length}</span>
+          </span>
+          <ChevronDown
+            size={14}
+            strokeWidth={1.8}
+            aria-hidden
+            style={{
+              color: "var(--text-dim)",
+              transform: collapsed ? "rotate(-90deg)" : "rotate(0deg)",
+              transition: "transform var(--dur-med) var(--ease-out-warm)",
+            }}
+          />
+        </button>
+        <button
+          type="button"
+          onClick={onOpenHub}
+          title={t("agentHub.openHub")}
+          aria-label={t("agentHub.openHub")}
+          className="ui-focus-ring"
+          style={{ background: "none", border: "none", color: "var(--text-muted)", cursor: "pointer", padding: "6px 8px", display: "inline-flex", alignItems: "center" }}
+        >
+          <LayoutGrid size={14} strokeWidth={1.8} aria-hidden />
+        </button>
+      </div>
       {!collapsed && (
         <div
           className="flex flex-wrap gap-1.5 px-3 py-2.5 animate-slide-down"
@@ -261,10 +275,11 @@ function SubagentsPanel({ subagents, onSelectSubagent, defaultExpanded = false }
  * subagent roster. Each is independently collapsible via its header row
  * (`chevron`) and starts collapsed; the headers always show live progress /
  * running-summary. Rendered pinned above the chat input. */
-export function ComposerPanels({ todoPhases, subagents, onSelectSubagent, defaultExpanded = false }: {
+export function ComposerPanels({ todoPhases, subagents, onSelectSubagent, onOpenHub, defaultExpanded = false }: {
   todoPhases: TodoPhase[];
   subagents: SubagentInfo[];
   onSelectSubagent: (subagent: SubagentInfo) => void;
+  onOpenHub: () => void;
   /** Initial expansion of both panels (default: collapsed). */
   defaultExpanded?: boolean;
 }) {
@@ -279,7 +294,7 @@ export function ComposerPanels({ todoPhases, subagents, onSelectSubagent, defaul
         collapsed={todoCollapsed}
         onCollapsedChange={(collapsed) => { saveCollapsed(TODO_COLLAPSED_STORAGE_KEY, collapsed); setTodoCollapsed(collapsed); }}
       />
-      <SubagentsPanel subagents={subagents} onSelectSubagent={onSelectSubagent} defaultExpanded={defaultExpanded} />
+      <SubagentsPanel subagents={subagents} onSelectSubagent={onSelectSubagent} onOpenHub={onOpenHub} defaultExpanded={defaultExpanded} />
     </div>
   );
 }

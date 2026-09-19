@@ -5,6 +5,11 @@
 
 import { asNumber, asString, isRecord } from "./type-guards";
 export type SubagentAgentSource = "bundled" | "user" | "project";
+/** Row kind. `advisor` rows are observability records (`__advisor*.jsonl` in
+ * the session's artifacts dir): transcript readable, never messageable /
+ * revivable / killable — the same restriction the TUI hub enforces, and the
+ * reason it lives on the roster row rather than only in the UI. */
+export type SubagentKind = "subagent" | "advisor";
 
 export interface SubagentRetryState {
   attempt: number;
@@ -101,6 +106,7 @@ export interface SubagentHistoryEntry {
   resolvedModelIsFallback?: boolean;
   retryFailure?: { attempt: number; errorMessage: string };
   result?: SubagentHistoryResult;
+  kind?: SubagentKind;
 }
 
 /** get_subagents snapshot (RpcSubagentSnapshot) as seen over the wire. */
@@ -121,6 +127,10 @@ export interface SubagentSnapshotLike {
 
 export function asAgentSource(value: unknown): SubagentAgentSource | undefined {
   return value === "bundled" || value === "user" || value === "project" ? value : undefined;
+}
+
+export function asSubagentKind(value: unknown): SubagentKind | undefined {
+  return value === "subagent" || value === "advisor" ? value : undefined;
 }
 
 function asProgressStatus(value: unknown): SubagentProgress["status"] | undefined {
@@ -343,6 +353,8 @@ export interface SubagentInfo {
    * session file. Authoritative launch order, but only available once that
    * call's result is on disk — `extractSubagentHistory` supplies it. */
   batchSeq?: number;
+  /** Row kind; absent means "subagent". Only disk history produces advisors. */
+  kind?: SubagentKind;
 }
 
 /** Ordinal for sorting: a batch the file has not recorded yet sorts last. */
