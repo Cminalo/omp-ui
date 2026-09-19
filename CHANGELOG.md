@@ -6,6 +6,14 @@ All notable changes to **omp-web** (`@kahme247/ompweb`) are documented in this f
 
 ## Unreleased
 
+### Fork bootstrap & reliability (2026-09-18)
+
+- **Fork governance:** `AGENTS.md` gains a mission header (secure, reliable, TUI-parity web UI), quality-gate table, security-invariants register, work-log and commit policy; new `STATUS.md` live board; new `docs/work-items/` timestamped work log with `TEMPLATE.md`.
+- **Security baseline review** of fork base `330db7d` (`docs/security/2026-09-18-security-review.md`) with prioritized findings (M1: inline `models.yml` keys served to clients) and `docs/security/invariants.md` register.
+- **Architecture wiki:** `docs/architecture/overview.md` (system context), `api-surface.md` (every route, methods, data sources), `omp-connection.md` (RPC process model, NDJSON protocol, on-disk contract).
+- **Roadmap wiki:** `docs/roadmap/index.md` MOC + pillars for security & reliability, TUI feature parity, and architecture visibility.
+- **Fixed:** tray `--status` test asserted `isWindows === true` on every non-Linux platform — red on macOS (CI only covers ubuntu+windows). Now platform-aware.
+
 ### Added
 
 - Add **Copy** and **Copy as Markdown** below user messages and completed assistant replies, with keyboard access and touch-sized controls. Copy only message text, excluding thinking, tool output, and renderer controls; preserve full source for oversized raw-text messages.

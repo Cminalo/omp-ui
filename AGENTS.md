@@ -1,4 +1,137 @@
-# omp-web - Development Notes
+---
+title: "omp-ui — Agent Notes"
+date: 2026-09-18
+tags:
+  - omp-ui
+  - agents
+  - workflow
+---
+
+# omp-ui — Agent Notes
+
+## Project Goal (mission)
+
+Develop and maintain a **secure and reliable web UI for the [omp](https://github.com/can1357/oh-my-pi) coding agent** that is feature-rich and strives to **match the features of the OMP TUI**. This repo (`Cminalo/omp-ui`) is a maintained fork of [`kahme247/ompweb`](https://github.com/kahme247/ompweb) (remote `upstream`). Security and reliability come first: a feature never ships at the cost of a security invariant below. Feature parity with the TUI is tracked in `[[docs/roadmap/02-feature-parity|the parity roadmap]]` and the matrix in `docs/parity/`.
+
+## Working Model
+
+This project is maintained primarily by a **single agent** working across **many sessions**. There is no rotating team; accountability comes from the artifacts each session leaves behind. The docs are the record — if a decision isn't recorded, it didn't happen. When in doubt, write it down in `docs/work-items/`.
+
+## Commands
+
+```bash
+npm ci                  # install deps (lockfile-pinned; never plain npm install for CI)
+npm run dev             # dev server on 127.0.0.1:30178 (needs `omp` on PATH or OMP_WEB_OMP_BIN)
+npm run typecheck       # tsc --noEmit
+npm run lint            # eslint — zero warnings tolerated
+npm test                # node:test suite (co-located *.test.mjs)
+npm run release:check   # typecheck + lint + test + build — before any release/tag
+```
+
+- **Never run `npm run build` during dev** — it pollutes `.next/` and breaks `npm run dev`.
+- LAN binds (`dev:lan` / `start:lan` / `--hostname 0.0.0.0`) **refuse to start without `OMP_WEB_PASSWORD`** — this is intentional, never remove.
+
+## Quality Gates
+
+Run continuously during development, **never batch them at the end**:
+
+```bash
+npm run typecheck && npm run lint   # fast gates, every edit batch
+npm test                            # before every commit that touches code
+```
+
+| Change type | Required gates |
+|---|---|
+| Docs-only (`README*`, `CHANGELOG.md`, `STATUS.md`, `docs/**`) | none required; keep links/wikilinks valid, frontmatter present on new `docs/**` pages |
+| Code change (`app/`, `lib/`, `components/`, `hooks/`, `bin/`) | `typecheck`, `lint`, `test` |
+| Behavior/API/RPC/security-sensitive change (route handlers, `proxy.ts`, `lib/omp/**`, auth, file access) | `typecheck`, `lint`, full `test` + a note in `docs/work-items/` |
+| Release | `npm run release:check` |
+
+## Testing
+
+Tests are **co-located** (`*.test.mjs` next to the file under test), run with `node --test` + `jiti` (no Jest/Vitest). Conceptual tiers (from the project conventions):
+
+| Tier | Scope | Typical shape in this repo |
+|------|-------|---------------------------|
+| Unit | Pure function, no I/O | `lib/*.test.mjs` over pure helpers |
+| Component | Multiple modules working together | `components/*.test.mjs` with `tests/setup-dom.mjs` + `@testing-library/react/pure.js` (`cleanup` in `afterEach`) |
+| System | End-to-end request flow | Route handlers driven with real `Request` objects; `hooks/useAgentSession.rpc.test.mjs` RPC-frame fixtures |
+
+New tests follow the nearest existing file's conventions. Any change to a security-sensitive primitive (`proxy.ts`, `lib/request-security.ts`, `lib/web-auth.ts`, `lib/file-access.ts`, `lib/markdown.ts`) **must** add or extend a test for the invariant.
+
+## Documentation Structure (wiki conventions)
+
+`docs/` doubles as an **Obsidian vault** (`.obsidian/` is gitignored). Conventions:
+
+- Every new `docs/**` page starts with YAML frontmatter: `title`, `date`, `tags`, and (for tracked items) `status: draft|active|done|blocked`.
+- Inside `docs/`, link between pages with Obsidian wikilinks `[[docs/path/to/note|label]]`; top-level files (`README`/`AGENTS`/etc.) use relative Markdown links so GitHub renders them.
+- Diagrams are **Mermaid** blocks (Obsidian renders them natively).
+
+```
+docs/
+  roadmap/        # the wiki MOC: index.md + one file per pillar
+  work-items/     # timestamped work log: <YYYY-MM-DD>-<slug>.md (see template)
+  architecture/   # mermaid diagrams: system, api surface, omp connection
+  security/       # review findings + the invariants register
+  parity/         # TUI ↔ web feature-parity matrix
+  specs/          # larger design specs (pre-existing)
+```
+
+**Documentation is a must.** If a change alters user-facing behavior, an API route, configuration, or a security invariant, the corresponding docs are updated **in the same commit**. `CHANGELOG.md` gets a line for every logical batch; `STATUS.md` is refreshed before significant commits.
+
+## Work Log (`docs/work-items/`)
+
+Every working session appends one timestamped file: `docs/work-items/<YYYY-MM-DD>-<slug>.md`, following `docs/work-items/TEMPLATE.md`. It records: what was attempted, what changed (files), gate results, decisions taken (and rejected), and follow-ups. Roadmap items reference work-item files as evidence of progress.
+
+## Security Invariants (never regress)
+
+Verified in the 2026-09-18 review — see `[[docs/security/2026-09-18-security-review|the full review]]`. These are load-bearing:
+
+1. **`proxy.ts` is the single auth/CSRF chokepoint.** It gates every `/api/` route (origin + `sec-fetch-site` check; password session when enabled). New routes are covered automatically — never bypass it, never add a second auth path.
+2. **Non-loopback bind requires a password** (`bin/omp-web.js` refuses otherwise). Session cookie stays `httpOnly`, `secure` under TLS, `sameSite=lax`; password comparison stays constant-time (`lib/web-auth.ts`).
+3. **Every network-supplied path goes through `getAllowedFileRoots()` + `isFilePathAllowed()`** (realpath both sides, `lib/file-access.ts`). Applies to `/api/files`, `cwd` params on git routes, worktrees, MCP config, subagent ids.
+4. **Markdown pipeline order is `rehype-raw` → `rehype-sanitize` (custom schema)** (`lib/markdown.ts`); mermaid stays `securityLevel: "strict"`. Never reorder, never widen the schema without a test.
+5. **API keys are never serialized to clients and `agent.db` is never written from Node** (`app/api/auth/api-key/*`). Known gap under repair: `GET /api/models-config` returns inline `models.yml` keys (tracked in `[[docs/roadmap/01-security-reliability]]`).
+6. **omp is spawned with execFile/arg-arrays and a sanitized env** (`lib/omp/rpc-process.ts`); no shell-string interpolation.
+7. **Mutating routes bound request bodies** (`parseJsonWithinLimit` / `parseFormDataWithinLimit` → 413).
+8. **Self-update stays same-origin-gated + two-phase** (prepare/commit with attemptId).
+
+## Status Tracking
+
+- **STATUS.md** — live status board (capabilities, recent batches, next work, known limitations). Update before significant commits.
+- **CHANGELOG.md** — reverse-chronological log of logical change batches (keep the existing `Unreleased` + `### Added / Fixes & Improvements` style).
+- **docs/roadmap/index.md** — the roadmap MOC; pillars link out to parity/security/architecture work.
+
+## Committing
+
+Conventional commits (`feat`, `fix`, `refactor`, `test`, `docs`, `chore`). **Commit after each logical batch**, not at the end of a long session — regular small commits are the policy here. A logical batch is one coherent unit that passes its required gates and carries its docs. Split unrelated batches. This repo's history should read as a changelog.
+
+## Fork Maintenance
+
+- `origin` = `Cminalo/omp-ui`; `upstream` = `kahme247/ompweb`. Pull upstream with merge (not rebase) into a `upstream-sync` branch, resolve, then merge back — record each sync as a work-item.
+- Upstream identity (npm package name `@kahme247/ompweb`, badges, Discord links in README) stays until an intentional rebrand decision is recorded in `docs/work-items/`.
+
+## Subagents
+
+Use subagents where they add net efficiency:
+
+| Agent | Role | When to Use |
+|-------|------|-------------|
+| `scout` | READ-ONLY codebase/doc scout | Parallel discovery before planning (TUI docs, upstream diffs, route inventories) |
+| `reviewer` | Code review | Security-sensitive diffs, RPC protocol changes |
+| `task` | Full-capability execution | Well-scoped feature work or clean splits (e.g. one parity item at a time) |
+
+Delegate **research and discovery** before architectural decisions. Delegate **implementation** only when the task is well-scoped or cleanly splittable.
+
+## When Unsure — Ask
+
+If requirements are ambiguous, an approach is unclear, or a decision has long-term impact (rebrand, dependency swaps, security posture changes) — ask the user before proceeding.
+
+---
+
+# Architecture & Development Notes
+
+*(upstream-authored, maintained — the authoritative map of how this app works)*
 
 ## Quick Start
 
