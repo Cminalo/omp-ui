@@ -49,7 +49,13 @@ test("runCli with --status returns status object", async () => {
   assert.equal(typeof res.status.port, "number");
   if (process.platform === "linux") {
     assert.equal(res.status.isLinux, true);
-  } else {
+  } else if (process.platform === "win32") {
     assert.equal(res.status.isWindows, true);
+  } else {
+    // macOS and other POSIX platforms use the Windows-service status shape,
+    // which reports isWindows:false and carries no isLinux field at all
+    // (isLinux only exists on the Linux tray's own status object).
+    assert.equal(res.status.isWindows, false);
+    assert.equal(res.status.isLinux, undefined);
   }
 });
